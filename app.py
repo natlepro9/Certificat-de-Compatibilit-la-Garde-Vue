@@ -43,30 +43,30 @@ if submit:
     pdf = FPDF()
     pdf.add_page()
     pdf.set_margins(10, 10, 10)
+    pdf.set_auto_page_break(auto=True, margin=15) # Important pour éviter que ça sorte en bas
     
-    # Gestion du logo
     if os.path.exists("logo.jpg"):
         pdf.image("logo.jpg", x=10, y=10, w=30)
 
-    # En-tête
+    pdf.ln(25) # Espace après le logo
     pdf.set_font("Arial", 'B', 16)
-    pdf.ln(10) # Espace pour ne pas chevaucher le logo
     pdf.cell(190, 10, "CERTIFICAT MEDICAL DE COMPATIBILITE", ln=True, align='C')
     pdf.ln(10)
     
-    # Contenu
+    # Corps du texte avec multi_cell pour gérer les retours à la ligne
     pdf.set_font("Arial", '', 12)
-    pdf.multi_cell(190, 8, f"Je soussigné(e), médecin urgentiste, atteste avoir procédé ce jour à l'examen médical de {nom} {prenom}, né(e) le {date_nais} ({sexe}).")
+    intro = f"Je soussigné(e), médecin urgentiste, atteste avoir procédé ce jour à l'examen médical de {nom} {prenom}, né(e) le {date_nais} ({sexe})."
+    pdf.multi_cell(190, 8, intro)
     pdf.ln(5)
     
     pdf.set_font("Arial", 'B', 12)
-    pdf.cell(190, 8, "Lieu et heure :", ln=True)
+    pdf.multi_cell(190, 8, "Lieu et heure :")
     pdf.set_font("Arial", '', 11)
-    pdf.cell(190, 8, f"Lieu : {lieu} | Date : {date.today()} | Heure : {str(heure)}", ln=True)
+    pdf.multi_cell(190, 8, f"Lieu : {lieu} | Date : {date.today()} | Heure : {str(heure)}")
     pdf.ln(5)
     
     pdf.set_font("Arial", 'B', 12)
-    pdf.cell(190, 8, "Observations et conclusion :", ln=True)
+    pdf.multi_cell(190, 8, "Observations et conclusion :")
     pdf.set_font("Arial", '', 11)
     pdf.multi_cell(190, 8, f"État : {obs_options}")
     pdf.multi_cell(190, 8, f"Précisions : {obs_details}")
@@ -78,10 +78,8 @@ if submit:
     
     pdf.ln(20)
     pdf.set_font("Arial", '', 12)
-    pdf.cell(190, 10, f"Fait à {lieu}, le {date.today()}", ln=True, align='R')
-    pdf.cell(190, 10, "Signature et cachet du médecin : ____________________", ln=True, align='R')
+    pdf.multi_cell(190, 8, f"Fait à {lieu}, le {date.today()}", align='R')
+    pdf.multi_cell(190, 8, "Signature et cachet du médecin : ____________________", align='R')
     
-    # Conversion finale
     pdf_final = bytes(pdf.output())
-    
     st.download_button("Télécharger le Certificat", pdf_final, "Certificat_GAV.pdf", "application/pdf")
