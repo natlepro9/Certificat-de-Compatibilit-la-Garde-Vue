@@ -42,37 +42,46 @@ with st.form("certificat_garde_a_vue"):
 if submit:
     pdf = FPDF()
     pdf.add_page()
+    pdf.set_margins(10, 10, 10)
     
+    # Gestion du logo
     if os.path.exists("logo.jpg"):
         pdf.image("logo.jpg", x=10, y=10, w=30)
 
+    # En-tête
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, "CERTIFICAT MEDICAL DE COMPATIBILITE", ln=True, align='C')
+    pdf.ln(10) # Espace pour ne pas chevaucher le logo
+    pdf.cell(190, 10, "CERTIFICAT MEDICAL DE COMPATIBILITE", ln=True, align='C')
     pdf.ln(10)
     
+    # Contenu
     pdf.set_font("Arial", '', 12)
-    pdf.multi_cell(0, 8, f"Je soussigné(e), médecin urgentiste, atteste avoir procédé ce jour à l'examen médical de {nom} {prenom}, né(e) le {date_nais} ({sexe}).")
+    pdf.multi_cell(190, 8, f"Je soussigné(e), médecin urgentiste, atteste avoir procédé ce jour à l'examen médical de {nom} {prenom}, né(e) le {date_nais} ({sexe}).")
     pdf.ln(5)
     
     pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 8, "Lieu et heure :", ln=True)
+    pdf.cell(190, 8, "Lieu et heure :", ln=True)
     pdf.set_font("Arial", '', 11)
-    pdf.cell(0, 8, f"Lieu : {lieu} | Date : {date.today()} | Heure : {heure}", ln=True)
+    pdf.cell(190, 8, f"Lieu : {lieu} | Date : {date.today()} | Heure : {str(heure)}", ln=True)
     pdf.ln(5)
     
     pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 8, "Observations et conclusion :", ln=True)
+    pdf.cell(190, 8, "Observations et conclusion :", ln=True)
     pdf.set_font("Arial", '', 11)
-    pdf.cell(0, 8, f"État : {obs_options}", ln=True)
-    pdf.multi_cell(0, 8, f"Précisions : {obs_details}")
-    pdf.multi_cell(0, 8, f"Traitements : {traitements}")
+    pdf.multi_cell(190, 8, f"État : {obs_options}")
+    pdf.multi_cell(190, 8, f"Précisions : {obs_details}")
+    pdf.multi_cell(190, 8, f"Traitements : {traitements}")
     pdf.ln(5)
     
     pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, f"CONCLUSION : {conclusion}", ln=True)
+    pdf.multi_cell(190, 10, f"CONCLUSION : {conclusion}")
     
     pdf.ln(20)
-    pdf.cell(0, 10, f"Fait à {lieu}, le {date.today()}", ln=True, align='R')
-    pdf.cell(0, 10, "Signature et cachet du médecin : ____________________", ln=True, align='R')
+    pdf.set_font("Arial", '', 12)
+    pdf.cell(190, 10, f"Fait à {lieu}, le {date.today()}", ln=True, align='R')
+    pdf.cell(190, 10, "Signature et cachet du médecin : ____________________", ln=True, align='R')
     
-    st.download_button("Télécharger le Certificat", bytes(pdf.output()), "Certificat_GAV.pdf", "application/pdf")
+    # Conversion finale
+    pdf_final = bytes(pdf.output())
+    
+    st.download_button("Télécharger le Certificat", pdf_final, "Certificat_GAV.pdf", "application/pdf")
