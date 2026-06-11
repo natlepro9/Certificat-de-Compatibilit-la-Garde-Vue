@@ -23,6 +23,7 @@ with st.form("certificat_garde_a_vue"):
         "Blessures légères, pas d'hospitalisation nécessaire",
         "Pathologies nécessitant un suivi particulier",
         "Autres"
+        "Frais"
     ])
     obs_details = st.text_area("Précisions complémentaires")
 
@@ -40,34 +41,39 @@ with st.form("certificat_garde_a_vue"):
 
 # --- Génération PDF ---
 if submit:
-    # On crée le PDF avec une largeur de page A4 standard
+    # Paramètres de page A4 standard
     pdf = FPDF(orientation='P', unit='mm', format='A4')
     pdf.add_page()
     
-    # Marge de 20mm pour éviter que le texte ne colle aux bords
-    pdf.set_margins(20, 20, 20) 
-    pdf.set_auto_page_break(auto=True, margin=20)
-    
-    # Zone de texte utile : 210mm (largeur A4) - 40mm (marges) = 170mm
-    largeur_utile = 170
+    # Définit des marges pour éviter le débordement
+    # Marge de 10mm à gauche, en haut, et à droite
+    pdf.set_margins(10, 10, 10) 
+    pdf.set_auto_page_break(auto=True, margin=10)
+
+    # Zone de texte utile : 210mm (A4) - 20mm (marges) = 190mm
+    largeur_utile = 190
 
     # Gestion du logo
     if os.path.exists("logo.jpg"):
-        pdf.image("logo.jpg", x=20, y=20, w=30)
+        pdf.image("logo.jpg", x=10, y=10, w=30)
 
     pdf.ln(30) # Espace après le logo
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(largeur_utile, 10, "CERTIFICAT MEDICAL", ln=True, align='C')
-    pdf.cell(largeur_utile, 10, "DE COMPATIBILITE A LA GARDE A VUE", ln=True, align='C')
+    pdf.multi_cell(largeur_utile, 10, "CERTIFICAT MEDICAL", 0, 'C')
+    pdf.multi_cell(largeur_utile, 10, "DE COMPATIBILITE A LA GARDE A VUE", 0, 'C')
     pdf.ln(10)
     
-    # Texte du certificat
+    # Texte d'introduction
     pdf.set_font("Arial", '', 11)
-    intro = f"Je soussigné(e), médecin urgentiste, atteste avoir procédé ce jour à l'examen médical de {nom} {prenom}, né(e) le {date_nais} ({sexe})."
-    pdf.multi_cell(largeur_utile, 7, intro)
+    intro_text = f"Je soussigné(e), médecin urgentiste, atteste avoir procédé ce jour à l'examen médical de {nom} {prenom}, né(e) le {date_nais} ({sexe})."
+    pdf.multi_cell(largeur_utile, 7, intro_text)
     pdf.ln(5)
     
-    # Sections
+    # --- Agencement en colonnes pour les sections ---
+    # Nous utilisons une largeur fixe pour les titres de section afin de forcer l'alignement
+    largeur_titre_section = 60
+    largeur_contenu_section = largeur_utile - largeur_titre_section
+
     sections = [
         ("Lieu et heure :", f"Lieu : {lieu} | Date : {date.today()} | Heure : {str(heure)}"),
         ("Observations médicales :", f"État : {obs_options}"),
@@ -76,19 +82,25 @@ if submit:
         ("CONCLUSION :", conclusion)
     ]
     
+    # Pour chaque section, nous créons deux cellules de largeur fixe
     for titre, contenu in sections:
         pdf.set_font("Arial", 'B', 11)
-        pdf.multi_cell(largeur_utile, 7, titre)
+        pdf.multi_cell(largeur_titre_section, 7, titre)
+        
         pdf.set_font("Arial", '', 11)
-        pdf.multi_cell(largeur_utile, 7, contenu)
-        pdf.ln(3)
+        # multi_cell ici forcera le retour à la ligne si le texte est trop long
+        pdf.multi_cell(largeur_contenu_section, 7, contenu)
+        pdf.ln(3) # Espace entre les sections
     
     # Signature
     pdf.ln(10)
     pdf.set_font("Arial", '', 11)
-    pdf.cell(largeur_utile, 8, f"Fait à {lieu}, le {date.today()}", ln=True, align='R')
-    pdf.cell(largeur_utile, 8, "Signature et cachet du médecin :", ln=True, align='R')
+    pdf.multi_cell(largeur_utile, 8, f"Fait à {lieu}, le {date.today()}", 0, 'R')
+    pdf.multi_cell(largeur_utile, 8, "Signature et cachet du médecin :", 0, 'R')
     pdf.ln(15)
-    pdf.cell(largeur_utile, 8, "____________________", ln=True, align='R')
+    pdf.multi_cell(largeur_utile, 8, "____________________", 0, 'R')
     
-    st.download_button("Télécharger le Certificat", bytes(pdf.output()), "Certificat_GAV.pdf", "application/pdf")
+    # Conversion finale
+    pdf_final = bytes(pdf.output())
+    
+    st.download_button("Télécharger le Certificat", pdf_final, "Certificat_GAV.pdf", "application/pdf")
