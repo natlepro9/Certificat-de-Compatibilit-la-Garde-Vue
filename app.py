@@ -11,7 +11,7 @@ with st.form("certificat_garde_a_vue"):
     st.subheader("1. Identité de la personne examinée")
     nom = st.text_input("Nom")
     prenom = st.text_input("Prénom")
-    date_nais = st.date_input("Date de naissance", min_value=datetime.date(1900, 1, 1), max_value=datetime.date.today())
+    date_nais = st.date_input("Date de naissance", min_value=datetime.date(1900, 1, 1), max_value=date.today())
     sexe = st.selectbox("Sexe", ["Homme", "Femme"])
 
     st.subheader("2. Lieu et heure de l’examen")
@@ -42,28 +42,30 @@ with st.form("certificat_garde_a_vue"):
 
 # --- Génération PDF ---
 if submit:
+    # Initialisation unique du PDF
     pdf = FPDF(orientation='P', unit='mm', format='A4')
     pdf.add_page()
     pdf.set_margins(15, 15, 15)
     pdf.set_auto_page_break(auto=True, margin=15)
     
-    # Largeur de page utile (210 - 15 - 15 = 180mm)
-    largeur = 180
+    largeur = 180  # Largeur utile
 
     if os.path.exists("logo.jpg"):
         pdf.image("logo.jpg", x=15, y=15, w=30)
 
     pdf.ln(25)
     pdf.set_font("Arial", 'B', 16)
-    pdf.multi_cell(largeur, 10, "CERTIFICAT MEDICAL\nDE COMPATIBILITE A LA GARDE A VUE", 0, 'C')
+    # Encodage forcé pour éviter les erreurs d'accents
+    pdf.multi_cell(largeur, 10, "CERTIFICAT MEDICAL\nDE COMPATIBILITE A LA GARDE A VUE".encode('latin-1', 'replace').decode('latin-1'), 0, 'C')
     pdf.ln(10)
     
     # Texte d'introduction
     pdf.set_font("Arial", '', 12)
-    pdf.multi_cell(largeur, 8, f"Je soussigné(e), médecin urgentiste, atteste avoir procédé ce jour à l'examen médical de {nom} {prenom}, né(e) le {date_nais} ({sexe}).")
+    intro = f"Je soussigné(e), médecin urgentiste, atteste avoir procédé ce jour à l'examen médical de {nom} {prenom}, né(e) le {date_nais} ({sexe})."
+    pdf.multi_cell(largeur, 8, intro.encode('latin-1', 'replace').decode('latin-1'))
     pdf.ln(5)
     
-    # Sections (Titre + Contenu)
+    # Sections
     sections = [
         ("Lieu et heure :", f"Lieu : {lieu} | Date : {date.today()} | Heure : {str(heure)}"),
         ("Observations médicales :", f"État : {obs_options}\nPrécisions : {obs_details}"),
@@ -73,16 +75,16 @@ if submit:
     
     for titre, contenu in sections:
         pdf.set_font("Arial", 'B', 12)
-        pdf.multi_cell(largeur, 8, titre)
+        pdf.multi_cell(largeur, 8, titre.encode('latin-1', 'replace').decode('latin-1'), 0, 'L')
         pdf.set_font("Arial", '', 12)
-        pdf.multi_cell(largeur, 8, contenu)
+        pdf.multi_cell(largeur, 8, contenu.encode('latin-1', 'replace').decode('latin-1'), 0, 'L')
         pdf.ln(3)
     
     # Signature
     pdf.ln(10)
     pdf.set_font("Arial", '', 12)
-    pdf.multi_cell(largeur, 8, f"Fait à {lieu}, le {date.today()}", 0, 'R')
-    pdf.multi_cell(largeur, 8, "Signature et cachet du médecin :", 0, 'R')
+    pdf.multi_cell(largeur, 8, f"Fait à {lieu}, le {date.today()}".encode('latin-1', 'replace').decode('latin-1'), 0, 'R')
+    pdf.multi_cell(largeur, 8, "Signature et cachet du médecin :".encode('latin-1', 'replace').decode('latin-1'), 0, 'R')
     pdf.ln(10)
     pdf.multi_cell(largeur, 8, "____________________", 0, 'R')
     
