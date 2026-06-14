@@ -1,6 +1,5 @@
 import streamlit as st
 from fpdf import FPDF
-import os
 import datetime
 from datetime import date
 
@@ -8,84 +7,53 @@ st.title("Certificat de Compatibilité à la Garde à Vue")
 
 # --- Formulaire ---
 with st.form("certificat_garde_a_vue"):
-    st.subheader("1. Identité de la personne examinée")
     nom = st.text_input("Nom")
     prenom = st.text_input("Prénom")
     date_nais = st.date_input("Date de naissance", min_value=datetime.date(1900, 1, 1), max_value=date.today())
     sexe = st.selectbox("Sexe", ["Homme", "Femme"])
-
-    st.subheader("2. Lieu et heure de l’examen")
     lieu = st.text_input("Lieu (Commissariat / Gendarmerie)")
     heure = st.time_input("Heure de l'examen")
-
-    st.subheader("3. Observations médicales")
-    obs_options = st.radio("État de santé", [
-        "Aucune blessure ni pathologie constatée",
-        "Blessures légères, pas d'hospitalisation nécessaire",
-        "Pathologies nécessitant un suivi particulier",
-        "Autres",
-        "Frais"
-    ])
-    obs_details = st.text_area("Précisions complémentaires")
-
-    st.subheader("4. Traitements et recommandations")
-    traitements = st.text_area("Prise médicamenteuse régulière ou surveillance")
-    
-    st.subheader("5. Conclusion médicale")
-    conclusion = st.selectbox("Décision", [
-        "Compatible avec une mesure de garde à vue",
-        "Compatible avec une garde à vue sous réserve de soins",
-        "Incompatible avec une garde à vue – Hospitalisation nécessaire"
-    ])
-
+    obs_options = st.radio("État de santé", ["Aucune blessure", "Blessures légères", "Pathologies", "Autres"])
+    obs_details = st.text_area("Précisions")
+    traitements = st.text_area("Traitements")
+    conclusion = st.selectbox("Décision", ["Compatible", "Compatible sous réserve", "Incompatible"])
     submit = st.form_submit_button("Générer le Certificat PDF")
 
 # --- Génération PDF ---
 if submit:
-    # Initialisation unique du PDF
     pdf = FPDF(orientation='P', unit='mm', format='A4')
     pdf.add_page()
-    pdf.set_margins(15, 15, 15)
-    pdf.set_auto_page_break(auto=True, margin=15)
     
-    largeur = 180  # Largeur utile
-
-    if os.path.exists("logo.jpg"):
-        pdf.image("logo.jpg", x=15, y=15, w=30)
-
-    pdf.ln(25)
+    # Largeur fixe 180mm (210mm A4 - 15mm marge gauche - 15mm marge droite)
+    largeur = 180 
+    
+    # Titre
     pdf.set_font("Arial", 'B', 16)
-    # Encodage forcé pour éviter les erreurs d'accents
-    pdf.multi_cell(largeur, 10, "CERTIFICAT MEDICAL\nDE COMPATIBILITE A LA GARDE A VUE".encode('latin-1', 'replace').decode('latin-1'), 0, 'C')
+    pdf.set_x(15) 
+    pdf.multi_cell(largeur, 10, "CERTIFICAT MEDICAL DE COMPATIBILITE", 0, 'C')
     pdf.ln(10)
     
-    # Texte d'introduction
-    pdf.set_font("Arial", '', 12)
-    intro = f"Je soussigné(e), médecin urgentiste, atteste avoir procédé ce jour à l'examen médical de {nom} {prenom}, né(e) le {date_nais} ({sexe})."
-    pdf.multi_cell(largeur, 8, intro.encode('latin-1', 'replace').decode('latin-1'))
-    pdf.ln(5)
-    
-    # Sections
-    sections = [
-        ("Lieu et heure :", f"Lieu : {lieu} | Date : {date.today()} | Heure : {str(heure)}"),
-        ("Observations médicales :", f"État : {obs_options}\nPrécisions : {obs_details}"),
-        ("Traitements et recommandations :", traitements),
-        ("CONCLUSION :", conclusion)
-    ]
-    
-    for titre, contenu in sections:
+    # Texte fixe avec alignement forcé
+    def ecrire_ligne(titre, texte):
+        pdf.set_x(15)
         pdf.set_font("Arial", 'B', 12)
         pdf.multi_cell(largeur, 8, titre.encode('latin-1', 'replace').decode('latin-1'), 0, 'L')
+        pdf.set_x(15)
         pdf.set_font("Arial", '', 12)
-        pdf.multi_cell(largeur, 8, contenu.encode('latin-1', 'replace').decode('latin-1'), 0, 'L')
-        pdf.ln(3)
+        pdf.multi_cell(largeur, 8, texte.encode('latin-1', 'replace').decode('latin-1'), 0, 'L')
+        pdf.ln(2)
+
+    ecrire_ligne("Identité :", f"{nom} {prenom}, né(e) le {date_nais} ({sexe})")
+    ecrire_ligne("Lieu et heure :", f"{lieu} à {heure}")
+    ecrire_ligne("Observations :", f"{obs_options} - {obs_details}")
+    ecrire_ligne("Traitements :", traitements)
+    ecrire_ligne("Conclusion :", conclusion)
     
     # Signature
     pdf.ln(10)
-    pdf.set_font("Arial", '', 12)
-    pdf.multi_cell(largeur, 8, f"Fait à {lieu}, le {date.today()}".encode('latin-1', 'replace').decode('latin-1'), 0, 'R')
-    pdf.multi_cell(largeur, 8, "Signature et cachet du médecin :".encode('latin-1', 'replace').decode('latin-1'), 0, 'R')
-    pdf.ln(10)
-    pdf.multi_cell(largeur, 8, "____________________", 0, 'R')
+    pdf.set_x(15)
+    pdf.multi_cell(largeur, 8, f"Fait le {date.today()} à {lieu}".encode('latin-1', 'replace').decode('latin-1'), 0, 'R')
+    pdf.set_x(15)
+    pdf.multi_cell(largeur, 8, "Signature et cachet : ____________________".encode('latin-1', 'replace').decode('latin-1'), 0, 'R')
     
-    st.download_button("Télécharger le Certificat", bytes(pdf.output()), "Certificat_GAV.pdf", "application/pdf")
+    st.download_button("Télécharger le Certificat", bytes(pdf.output()), "Certificat.pdf", "application/pdf")
